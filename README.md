@@ -44,3 +44,18 @@ A purely frontend aspect ratio visualizer and cropper
 双击使用任何现代浏览器（Chrome, Edge, Safari, Firefox）打开它。
 
 尽情享受！
+
+
+💡 使用场景举例 (Use Cases)
+做 UI / 网页设计：想做一个超宽屏 Banner，选择 21:9，输入网页宽度 2560px（2K），工具立刻算出高度应设为 1097px。
+
+多平台内容分发：拍了一张极美的横屏风景照，想要发到小红书。上传照片，选择 Social -> Red / 小红书 (3:4)，拖拽调整好构图重点，一键导出 1080×1440 的高清竖屏图。
+
+电影感视频重构：接到了客户的 16:9 视频源文件，想要裁切成 2.35:1 的电影画幅。利用比例可视化和三分线，可以完美预览上下黑边的遮挡效果。
+
+🛠️ 技术栈 (Tech Stack)
+HTML5: 语义化结构，强大的 <canvas> API 用于图像裁切与渲染。
+
+CSS3: CSS Grid 构图网格，Cubic-bezier 贝塞尔曲线平滑动画，CSS Variables 主题管理，Drop-shadow 智能辅助线渲染。
+
+Vanilla JavaScript (ES6+): 原生 JS 状态管理，FileReader & URL.createObjectURL 本地文件处理，鼠标滚轮与拖拽事件监听。（不依赖 React/Vue 或任何第三方库）。
