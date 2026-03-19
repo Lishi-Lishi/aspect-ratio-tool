@@ -38,3 +38,9 @@ A purely frontend aspect ratio visualizer and cropper
 1. 克隆或下载本仓库到你的电脑：
    ```bash
    git clone [https://github.com/你的用户名/你的仓库名.git](https://github.com/你的用户名/你的仓库名.git)
+
+找到 index.html 文件。
+
+双击使用任何现代浏览器（Chrome, Edge, Safari, Firefox）打开它。
+
+尽情享受！
