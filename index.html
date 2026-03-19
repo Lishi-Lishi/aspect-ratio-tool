@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aspect Ratio Visualizer | Monolith</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* ================= 颜色主题变量 ================= */
+        :root {
+            --bg-panel: #ffffff;
+            --bg-stage: #f5f5f7;
+            --text-main: #000000;
+            --text-label: #86868b;
+            --border-color: #e5e5ea;
+            --input-bg: #f5f5f7;
+            --input-border: transparent;
+            --input-focus: #000000;
+            --preset-hover: #f5f5f7;
+            --btn-active-bg: #000000;
+            --btn-active-text: #ffffff;
+            --frame-border: #000000;
+            --theme-btn-bg: #e5e5ea;
+            --guide-line: rgba(0, 0, 0, 0.9); 
+            --mask-color: rgba(255, 255, 255, 0.85); 
+        }
+
+        [data-theme="dark"] {
+            --bg-panel: #151515;
+            --bg-stage: #0a0a0a;
+            --text-main: #ffffff;
+            --text-label: #a1a1aa;
+            --border-color: #27272a;
+            --input-bg: #1e1e1e;
+            --input-border: transparent;
+            --input-focus: #ffffff;
+            --preset-hover: #1e1e1e;
+            --btn-active-bg: #ffffff;
+            --btn-active-text: #000000;
+            --frame-border: #FFFFFF;
+            --theme-btn-bg: #27272a;
+            --guide-line: rgba(255, 255, 255, 0.9);
+            --mask-color: rgba(0, 0, 0, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--bg-stage);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+
+        /* ================= 左侧控制面板 ================= */
+        .sidebar {
+            width: 420px;
+            background-color: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            padding: 32px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 36px;
+            overflow-y: auto;
+            z-index: 10;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; text-transform: uppercase; }
+        
+        .theme-toggle {
+            background: var(--theme-btn-bg); border: none; color: var(--text-main);
+            width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+            font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+        }
+
+        .section-title {
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em;
+            text-transform: uppercase; margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .tabs { display: flex; gap: 16px; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); }
+        .tab-btn {
+            background: transparent; border: none; color: var(--text-label);
+            font-size: 0.8rem; font-weight: 800; letter-spacing: 0.05em;
+            text-transform: uppercase; padding-bottom: 8px; cursor: pointer;
+            position: relative; transition: color 0.2s;
+        }
+        .tab-btn:hover, .tab-btn.active { color: var(--text-main); }
+        .tab-btn.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; width: 100%; height: 2px; background-color: var(--text-main);
+        }
+
+        .preset-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .btn-preset {
+            background: transparent; border: 1px solid var(--border-color); color: var(--text-main);
+            padding: 16px 0; border-radius: 4px; cursor: pointer; display: flex;
+            flex-direction: column; align-items: center; gap: 4px; transition: all 0.2s;
+        }
+        .btn-preset:hover { background: var(--preset-hover); }
+        .btn-preset.active { background: var(--btn-active-bg); border-color: var(--btn-active-bg); color: var(--btn-active-text); }
+        .btn-preset .ratio-num { font-size: 1.1rem; font-weight: 800; }
+        .btn-preset .ratio-name { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+
+        .input-row { display: flex; gap: 20px; }
+        .input-group { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .input-group label { font-size: 0.7rem; font-weight: 600; color: var(--text-label); text-transform: uppercase; letter-spacing: 0.05em; }
+        input[type="number"] {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--input-border);
+            color: var(--text-main); padding: 14px 16px; border-radius: 6px;
+            font-size: 1.5rem; font-weight: 800; outline: none; transition: all 0.2s;
+        }
+        input[type="number"]:focus { border-color: var(--input-focus); background: transparent; }
+        .btn-swap { background: transparent; border: none; color: var(--text-main); cursor: pointer; font-size: 1.2rem; opacity: 0.6; transition: opacity 0.2s; }
+        .btn-swap:hover { opacity: 1; }
+
+        /* ====== 新增：分辨率快捷标签 ====== */
+        .quick-res-tags { display: flex; gap: 8px; margin-bottom: 12px; }
+        .res-tag {
+            background: var(--input-bg); border: 1px solid var(--border-color);
+            color: var(--text-label); font-size: 0.7rem; font-weight: 800;
+            padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: all 0.2s;
+        }
+        .res-tag:hover { border-color: var(--text-main); color: var(--text-main); }
+
+        /* ====== 新增：导出按钮样式 ====== */
+        .upload-actions { display: flex; gap: 8px; }
+        .upload-btn {
+            flex: 1; background: transparent; border: 2px dashed var(--border-color);
+            color: var(--text-main); padding: 14px 12px; border-radius: 6px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .upload-btn:hover { border-color: var(--text-main); background: var(--preset-hover); }
+        .btn-remove {
+            background: #ef4444; color: white; border: none; padding: 0 16px;
+            border-radius: 6px; font-weight: 800; cursor: pointer; display: none; transition: background 0.2s;
+        }
+        .btn-remove:hover { background: #dc2626; }
+        .btn-export {
+            background: var(--text-main); color: var(--bg-panel); border: none;
+            padding: 0 16px; border-radius: 6px; font-weight: 800; cursor: pointer;
+            display: none; transition: opacity 0.2s; white-space: nowrap;
+        }
+        .btn-export:hover { opacity: 0.8; }
+
+        .select-wrapper { position: relative; width: 100%; }
+        select {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--input-border);
+            color: var(--text-main); padding: 14px 16px; border-radius: 6px;
+            font-size: 0.9rem; font-weight: 600; outline: none; cursor: pointer;
+            appearance: none; -webkit-appearance: none;
+        }
+        select:focus { border-color: var(--input-focus); background: transparent; }
+        select option { background-color: var(--bg-panel); color: var(--text-main); }
+        .select-wrapper::after {
+            content: '▼'; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+            font-size: 0.7rem; color: var(--text-label); pointer-events: none;
+        }
+
+        /* ================= 右侧展示舞台 ================= */
+        .stage {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            padding: 60px; position: relative; overflow: hidden;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        .uploaded-image {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            transform-origin: center;
+            z-index: 0;
+            display: none;
+            user-select: none; 
+            -webkit-user-drag: none;
+        }
+
+        .frame {
+            position: relative;
+            border: 3px solid var(--frame-border); 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+            pointer-events: none; 
+            z-index: 2;
+        }
+
+        .frame.has-image {
+            border: 4px solid var(--frame-border); 
+            box-shadow: 0 0 0 9999px var(--mask-color); 
+        }
+
+        .frame::before, .frame::after {
+            content: ''; position: absolute; width: 20px; height: 20px;
+            border: 4px solid var(--text-label); opacity: 0.5; pointer-events: none; z-index: 3;
+        }
+        .frame::before { top: -4px; left: -4px; border-right: none; border-bottom: none; }
+        .frame::after { bottom: -4px; right: -4px; border-left: none; border-top: none; }
+
+        /* ================= 辅助线图层 ================= */
+        .guide-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; 
+            z-index: 10; 
+            transition: opacity 0.3s;
+            filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.7));
+        }
+        
+        .guide-grid { display: grid; width: 100%; height: 100%; }
+        .guide-grid span { border-right: 2px solid var(--guide-line); border-bottom: 2px solid var(--guide-line); }
+        .guide-grid span:nth-child(3n) { border-right: none; }
+        .guide-grid span:nth-last-child(-n+3) { border-bottom: none; }
+        .guide-thirds { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+        .guide-golden { grid-template-columns: 1fr 0.618fr 1fr; grid-template-rows: 1fr 0.618fr 1fr; }
+        .guide-diagonal {
+            background-image: 
+                linear-gradient(to bottom right, transparent calc(50% - 0.5px), var(--guide-line) 50%, transparent calc(50% + 0.5px)),
+                linear-gradient(to top right, transparent calc(50% - 0.5px), var(--guide-line) 50%, transparent calc(50% + 0.5px));
+        }
+
+        .frame-content { text-align: center; z-index: 2; transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1); }
+        .info-ratio { font-size: clamp(3rem, 8vw, 6rem); font-weight: 800; letter-spacing: -0.05em; line-height: 1; margin-bottom: 8px; }
+        .info-res { font-size: 0.85rem; font-weight: 600; color: var(--text-label); letter-spacing: 0.1em; text-transform: uppercase; }
+
+        .frame.has-image .frame-content {
+            position: absolute; bottom: 24px; transform: scale(0.5); transform-origin: bottom center;
+            opacity: 0.8; background: rgba(0,0,0,0.5); padding: 8px 16px; border-radius: 8px; color: #fff;
+        }
+        .frame.has-image .info-res { color: #ccc; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 50vh; padding: 24px; border-right: none; border-bottom: 1px solid var(--border-color); }
+            .stage { height: 50vh; padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="header">
+            <h1>AspectMonolith</h1>
+            <button class="theme-toggle" id="btnTheme" title="切换深色/浅色模式">🌓</button>
+        </div>
+
+        <div>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="standard">Standard</button>
+                <button class="tab-btn" data-tab="social">Social</button>
+            </div>
+            <div class="preset-grid" id="presetGrid"></div>
+        </div>
+
+        <div>
+            <div class="input-section-header">
+                <div class="section-title">Custom Ratio</div>
+                <button class="btn-swap" id="btnSwap" title="交换宽和高">⇄</button>
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Width</label>
+                    <input type="number" id="ratioW" value="16" min="0.01" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>Height</label>
+                    <input type="number" id="ratioH" value="9" min="0.01" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title" style="margin-bottom: 8px;">Resolution (PX)</div>
+            <div class="quick-res-tags">
+                <button class="res-tag" data-size="1080">1080P</button>
+                <button class="res-tag" data-size="2560">2K</button>
+                <button class="res-tag" data-size="3840">4K</button>
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Width</label>
+                    <input type="number" id="resW" value="1920" min="1">
+                </div>
+                <div class="input-group">
+                    <label>Height</label>
+                    <input type="number" id="resH" value="1080" min="1">
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Image Crop & Export</div>
+            <div class="upload-actions">
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <button class="upload-btn" id="btnUpload">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    Upload Image
+                </button>
+                <button class="btn-export" id="btnExport" title="导出裁剪后的图片">📥 Export</button>
+                <button class="btn-remove" id="btnRemove" title="清除图片">✕</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="section-title">Composition Guide</div>
+            <div class="select-wrapper">
+                <select id="guideSelect">
+                    <option value="none">None </option>
+                    <option value="thirds">Rule of Thirds </option>
+                    <option value="golden">Golden Grid </option>
+                    <option value="diagonal">Diagonals </option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="stage" id="stage">
+        <img id="uploadedImage" class="uploaded-image" alt="Overlay" crossorigin="anonymous">
+
+        <div class="frame" id="frame">
+            <div class="guide-overlay" id="guideOverlay"></div>
+            <div class="frame-content">
+                <div class="info-ratio" id="displayRatio">16:9</div>
+                <div class="info-res" id="displayRes">1920 x 1080 PX</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const btnTheme = document.getElementById('btnTheme');
+        let isDarkMode = true; 
+        document.documentElement.setAttribute('data-theme', 'dark');
+
+        btnTheme.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) document.documentElement.setAttribute('data-theme', 'dark');
+            else document.documentElement.removeAttribute('data-theme');
+        });
+
+        let state = { ratioW: 16, ratioH: 9, resW: 1920, resH: 1080, activeTab: 'standard', hasImage: false };
+        let imgState = { scale: 1, x: 0, y: 0, isDragging: false, startX: 0, startY: 0 };
+
+        const presetData = {
+            standard: [
+                { w: 1, h: 1, label: "Square" },
+                { w: 2, h: 3, label: "Photo Portrait" },
+                { w: 4, h: 3, label: "Classic" },
+                { w: 16, h: 9, label: "HD Widescreen" },
+                { w: 21, h: 9, label: "Ultrawide" },
+                { w: 2.35, h: 1, label: "Cinemascope" }
+            ],
+            social: [
+                { w: 9, h: 16, label: "TikTok / Reels", resW: 1080, resH: 1920 },
+                { w: 16, h: 9, label: "YouTube Video", resW: 1920, resH: 1080 },
+                { w: 4, h: 5, label: "IG Portrait", resW: 1080, resH: 1350 },
+                { w: 1, h: 1, label: "IG Post", resW: 1080, resH: 1080 },
+                { w: 3, h: 4, label: "Red / 小红书", resW: 1080, resH: 1440 }
+            ]
+        };
+
+        const elRatioW = document.getElementById('ratioW'); const elRatioH = document.getElementById('ratioH');
+        const elResW = document.getElementById('resW'); const elResH = document.getElementById('resH');
+        const btnSwap = document.getElementById('btnSwap'); const presetGrid = document.getElementById('presetGrid');
+        const frame = document.getElementById('frame'); const stage = document.getElementById('stage');
+        const displayRatio = document.getElementById('displayRatio'); const displayRes = document.getElementById('displayRes');
+        const guideSelect = document.getElementById('guideSelect'); const guideOverlay = document.getElementById('guideOverlay');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const resTags = document.querySelectorAll('.res-tag'); // 快捷分辨率按钮
+        const imageUpload = document.getElementById('imageUpload'); const btnUpload = document.getElementById('btnUpload');
+        const btnRemove = document.getElementById('btnRemove'); const uploadedImage = document.getElementById('uploadedImage');
+        const btnExport = document.getElementById('btnExport'); // 导出按钮
+
+        // === 新增：快捷分辨率逻辑 ===
+        resTags.forEach(tag => {
+            tag.addEventListener('click', (e) => {
+                const longEdge = parseInt(e.target.getAttribute('data-size'));
+                // 判断长边在哪，把长边设为目标分辨率，并换算短边
+                if (state.ratioW >= state.ratioH) {
+                    state.resW = longEdge;
+                    state.resH = Math.round(longEdge / (state.ratioW / state.ratioH));
+                } else {
+                    state.resH = longEdge;
+                    state.resW = Math.round(longEdge * (state.ratioW / state.ratioH));
+                }
+                updateUI();
+            });
+        });
+
+        // === 图片操作逻辑 ===
+        btnUpload.addEventListener('click', () => imageUpload.click());
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const url = URL.createObjectURL(file);
+            uploadedImage.src = url; uploadedImage.style.display = 'block';
+            state.hasImage = true; 
+            btnUpload.innerHTML = '🔄 Change';
+            btnRemove.style.display = 'block'; 
+            btnExport.style.display = 'block'; // 显示导出按钮
+            frame.classList.add('has-image');
+            stage.style.backgroundImage = 'none';
+
+            uploadedImage.onload = () => {
+                const stageH = stage.clientHeight; const imgH = uploadedImage.naturalHeight;
+                imgState.scale = imgH > 0 ? (stageH * 0.8) / imgH : 1;
+                imgState.x = 0; imgState.y = 0; applyImageTransform();
+            };
+        });
+
+        btnRemove.addEventListener('click', () => {
+            if(uploadedImage.src) URL.revokeObjectURL(uploadedImage.src);
+            imageUpload.value = ''; uploadedImage.src = ''; uploadedImage.style.display = 'none';
+            state.hasImage = false; 
+            btnUpload.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Upload Image';
+            btnRemove.style.display = 'none'; 
+            btnExport.style.display = 'none'; // 隐藏导出按钮
+            frame.classList.remove('has-image'); stage.style.backgroundImage = '';
+        });
+
+        // === 新增：核心导出裁剪逻辑 ===
+        btnExport.addEventListener('click', () => {
+            if (!state.hasImage) return;
+
+            // 1. 创建隐形画布
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 设定画布的输出分辨率
+            canvas.width = state.resW;
+            canvas.height = state.resH;
+
+            // 给画布填充一个底色 (以防图片没有覆盖满画框)
+            ctx.fillStyle = isDarkMode ? '#000000' : '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 精确计算从屏幕到画布的映射关系
+            const frameW = frame.clientWidth; // 屏幕上裁切框的实际宽度
+            const canvasScale = state.resW / frameW; // 画布和屏幕尺寸的缩放比
+
+            const img = uploadedImage;
+            
+            // 计算图片在目标画布上应该绘制的大小
+            const drawW = img.naturalWidth * imgState.scale * canvasScale;
+            const drawH = img.naturalHeight * imgState.scale * canvasScale;
+
+            // 计算图片在画布上的中心点坐标 (考虑拖拽偏移量)
+            const centerX = (state.resW / 2) + (imgState.x * canvasScale);
+            const centerY = (state.resH / 2) + (imgState.y * canvasScale);
+
+            // 计算绘制起点的左上角坐标
+            const drawX = centerX - drawW / 2;
+            const drawY = centerY - drawH / 2;
+
+            // 3. 将原图绘制到隐形画布上
+            ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+            // 4. 将画布转换为图片文件并触发下载
+            const link = document.createElement('a');
+            link.download = `Crop_${state.ratioW}x${state.ratioH}_${state.resW}x${state.resH}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0); // 1.0 表示最高质量
+            link.click();
+        });
+
+
+        function applyImageTransform() {
+            if (!state.hasImage) return;
+            uploadedImage.style.transform = `translate(calc(-50% + ${imgState.x}px), calc(-50% + ${imgState.y}px)) scale(${imgState.scale})`;
+        }
+
+        stage.addEventListener('mousedown', (e) => {
+            if (!state.hasImage) return;
+            imgState.isDragging = true; imgState.startX = e.clientX - imgState.x; imgState.startY = e.clientY - imgState.y;
+            stage.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!imgState.isDragging) return;
+            imgState.x = e.clientX - imgState.startX; imgState.y = e.clientY - imgState.startY; applyImageTransform();
+        });
+
+        window.addEventListener('mouseup', () => { imgState.isDragging = false; stage.style.cursor = 'default'; });
+
+        stage.addEventListener('wheel', (e) => {
+            if (!state.hasImage) return;
+            e.preventDefault();
+            const zoomIntensity = 0.05;
+            imgState.scale *= e.deltaY < 0 ? (1 + zoomIntensity) : (1 / (1 + zoomIntensity));
+            imgState.scale = Math.max(0.05, Math.min(imgState.scale, 20)); applyImageTransform();
+        }, { passive: false });
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                tabBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active');
+                state.activeTab = e.target.getAttribute('data-tab'); renderPresets(); updatePresetButtons();
+            });
+        });
+
+        function formatRatioNum(num) { return parseFloat(num.toFixed(2)); }
+
+        function renderPresets() {
+            presetGrid.innerHTML = '';
+            presetData[state.activeTab].forEach(p => {
+                const btn = document.createElement('button'); btn.className = 'btn-preset';
+                btn.innerHTML = `<span class="ratio-num">${formatRatioNum(p.w)} : ${formatRatioNum(p.h)}</span><span class="ratio-name">${p.label}</span>`;
+                btn.onclick = () => {
+                    state.ratioW = p.w; state.ratioH = p.h;
+                    if(p.resW && p.resH) { state.resW = p.resW; state.resH = p.resH; } 
+                    else { state.resH = Math.round(state.resW / (state.ratioW / state.ratioH)); }
+                    updateUI();
+                };
+                presetGrid.appendChild(btn);
+            });
+        }
+
+        function updatePresetButtons() {
+            const btns = presetGrid.querySelectorAll('.btn-preset');
+            presetData[state.activeTab].forEach((p, index) => {
+                if (Math.abs(p.w - state.ratioW) < 0.01 && Math.abs(p.h - state.ratioH) < 0.01) btns[index].classList.add('active');
+                else btns[index].classList.remove('active');
+            });
+        }
+
+        guideSelect.addEventListener('change', (e) => {
+            const type = e.target.value; guideOverlay.className = 'guide-overlay'; guideOverlay.innerHTML = '';
+            if(type === 'thirds' || type === 'golden') {
+                guideOverlay.classList.add('guide-grid', type === 'thirds' ? 'guide-thirds' : 'guide-golden');
+                for(let i=0; i<9; i++) guideOverlay.appendChild(document.createElement('span'));
+            } else if (type === 'diagonal') guideOverlay.classList.add('guide-diagonal');
+        });
+
+        function renderFrame() {
+            const padding = 80; const maxW = stage.clientWidth - padding * 2; const maxH = stage.clientHeight - padding * 2;
+            const targetRatio = state.ratioW / state.ratioH; const stageRatio = maxW / maxH;
+            let finalW, finalH;
+            if (targetRatio > stageRatio) { finalW = maxW; finalH = maxW / targetRatio; } 
+            else { finalH = maxH; finalW = maxH * targetRatio; }
+            frame.style.width = `${finalW}px`; frame.style.height = `${finalH}px`;
+            displayRatio.textContent = `${formatRatioNum(state.ratioW)}:${formatRatioNum(state.ratioH)}`;
+            displayRes.textContent = `${state.resW} x ${state.resH} PX`;
+        }
+
+        function updateUI() {
+            if (document.activeElement !== elRatioW) elRatioW.value = formatRatioNum(state.ratioW);
+            if (document.activeElement !== elRatioH) elRatioH.value = formatRatioNum(state.ratioH);
+            if (document.activeElement !== elResW) elResW.value = state.resW;
+            if (document.activeElement !== elResH) elResH.value = state.resH;
+            updatePresetButtons(); renderFrame();
+        }
+
+        elRatioW.addEventListener('input', (e) => { state.ratioW = parseFloat(e.target.value) || 1; state.resH = Math.round(state.resW / (state.ratioW / state.ratioH)); updateUI(); });
+        elRatioH.addEventListener('input', (e) => { state.ratioH = parseFloat(e.target.value) || 1; state.resH = Math.round(state.resW / (state.ratioW / state.ratioH)); updateUI(); });
+        elResW.addEventListener('input', (e) => { state.resW = parseInt(e.target.value) || 1; state.resH = Math.round(state.resW / (state.ratioW / state.ratioH)); updateUI(); });
+        elResH.addEventListener('input', (e) => { state.resH = parseInt(e.target.value) || 1; state.resW = Math.round(state.resH * (state.ratioW / state.ratioH)); updateUI(); });
+        [elRatioW, elRatioH, elResW, elResH].forEach(el => el.addEventListener('blur', () => updateUI()));
+
+        btnSwap.addEventListener('click', () => {
+            const tempRatio = state.ratioW; state.ratioW = state.ratioH; state.ratioH = tempRatio;
+            const tempRes = state.resW; state.resW = state.resH; state.resH = tempRes; updateUI();
+        });
+
+        window.addEventListener('resize', renderFrame);
+        renderPresets(); updateUI(); setTimeout(renderFrame, 50);
+    </script>
+</body>
+</html>
