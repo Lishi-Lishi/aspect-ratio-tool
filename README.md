@@ -32,7 +32,7 @@ A purely frontend aspect ratio visualizer and cropper
 
 ### 方法一：直接在线使用 (推荐)
 直接访问本项目的 GitHub Pages 链接即可在线使用（完全免费且无需登录）：
-👉 **[点击这里访问 AspectMonolith 在线版](https://你的用户名.github.io/你的仓库名/)** *(注：请在部署后替换此链接)*
+👉 **[点击这里访问 AspectMonolith 在线版](https://lishi-lishi.github.io/aspect-ratio-tool/)** 
 
 ### 方法二：本地运行
 1. 克隆或下载本仓库到你的电脑：
