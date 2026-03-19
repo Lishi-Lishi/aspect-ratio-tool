@@ -37,7 +37,7 @@ A purely frontend aspect ratio visualizer and cropper
 ### 方法二：本地运行
 1. 克隆或下载本仓库到你的电脑：
    ```bash
-   git clone [https://github.com/你的用户名/你的仓库名.git](https://github.com/你的用户名/你的仓库名.git)
+   git clone https://github.com/Lishi-Lishi/aspect-ratio-tool.git
 
 找到 index.html 文件。
 
